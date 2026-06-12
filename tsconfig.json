@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "target": "ES2024",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "rootDir": ".",
+    "outDir": "./dist",
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "newLine": "lf",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/mocks/*": ["./__mocks__/*"],
+      "@/tests/*": ["./__tests__/*"]
+    }
+  },
+  "include": ["src/**/*", "__tests__/**/*", "__mocks__/**/*"],
+  "exclude": ["./dist", "./node_modules", "./coverage"]
+}
