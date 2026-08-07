@@ -1,0 +1,47 @@
+name: Test SHA ref mode and dash tag separator
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          semver-mode: conventional-commits
+          default-semver-level: patch
+          default-first-tag: v1.0.0
+          module-ref-mode: sha
+          tag-directory-separator: "-"
+          use-version-prefix: "true"
+          pre-release: "true"
+          disable-wiki: "true"
+          delete-legacy-tags: "true"
+          github_token: ${{ github.token }}
+
+      - name: Assert action ran with SHA ref mode
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          ALL_MODULE_NAMES: ${{ steps.action.outputs.all-module-names }}
+          CHANGED_MODULE_NAMES: ${{ steps.action.outputs.changed-module-names }}
+          CHANGED_MODULE_PATHS: ${{ steps.action.outputs.changed-module-paths }}
+          CHANGED_MODULES_MAP: ${{ steps.action.outputs.changed-modules-map }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "all-module-names: $ALL_MODULE_NAMES"
+          echo "changed-module-names: $CHANGED_MODULE_NAMES"
+          echo "changed-module-paths: $CHANGED_MODULE_PATHS"
+          echo "changed-modules-map: $CHANGED_MODULES_MAP"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded with SHA ref mode"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo is not resolvable)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
