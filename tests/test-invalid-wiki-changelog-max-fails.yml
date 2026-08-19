@@ -1,0 +1,34 @@
+name: Test invalid wiki-sidebar-changelog-max fails with clear error
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with invalid wiki-sidebar-changelog-max (zero) expecting failure
+        id: action
+        uses: .
+        env:
+          GITHUB_EVENT_NAME: pull_request
+          GITHUB_SERVER_URL: https://github.com
+          GITHUB_REPOSITORY: test-owner/test-repo
+          GITHUB_EVENT_PATH: ${{ github.workspace }}/pristine/techpivot--terraform-module-releaser/v2.0.0/tests/fixtures/pr-event.json
+        with:
+          github_token: fake-token-for-testing
+          wiki-sidebar-changelog-max: "0"
+          disable-wiki: "true"
+        continue-on-error: true
+
+      - name: Assert action failed
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with wiki-sidebar-changelog-max=0, got outcome=$OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly failed with invalid wiki-sidebar-changelog-max value"
