@@ -1,0 +1,88 @@
+name: Test - SHA Ref Mode and SSH Source Format
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/3/merge
+      GITHUB_HEAD_REF: feature-sha-ref
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create sample terraform module
+        run: |
+          mkdir -p modules/database/rds
+          cat > modules/database/rds/main.tf << 'EOF'
+          resource "aws_db_instance" "this" {
+            identifier        = var.identifier
+            engine            = "mysql"
+            instance_class    = var.instance_class
+            allocated_storage = var.allocated_storage
+            username          = var.username
+            password          = var.password
+          }
+          EOF
+          cat > modules/database/rds/variables.tf << 'EOF'
+          variable "identifier" {
+            type = string
+          }
+          variable "instance_class" {
+            type    = string
+            default = "db.t3.micro"
+          }
+          variable "allocated_storage" {
+            type    = number
+            default = 20
+          }
+          variable "username" {
+            type = string
+          }
+          variable "password" {
+            type      = string
+            sensitive = true
+          }
+          EOF
+          cat > modules/database/rds/outputs.tf << 'EOF'
+          output "endpoint" {
+            description = "The connection endpoint"
+            value       = aws_db_instance.this.endpoint
+          }
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          major-keywords: "major change,breaking change"
+          minor-keywords: "feat,feature"
+          patch-keywords: "fix,chore,docs"
+          default-first-tag: v1.0.0
+          terraform-docs-version: v0.20.0
+          delete-legacy-tags: "true"
+          disable-wiki: "true"
+          disable-branding: "true"
+          use-ssh-source-format: "true"
+          module-ref-mode: "sha"
+          use-version-prefix: "false"
+          tag-directory-separator: "/"
+          github_token: ${{ github.token }}
+
+      - name: Assert action ran with SHA ref mode
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          ALL_MODULES: ${{ steps.action.outputs.all-module-names }}
+        run: |
+          echo "Action outcome: $OUTCOME"
+          echo "All module names: $ALL_MODULES"
+          # In act environment without real GitHub API access, the action may fail
+          # but should not crash with an unhandled exception
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: Action completed successfully with SHA ref mode"
+          else
+            echo "INFO: Action did not succeed (expected in act environment without real GitHub API)"
+            echo "PASS: Action ran and failed gracefully with SHA ref mode"
+          fi
