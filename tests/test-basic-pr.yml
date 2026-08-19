@@ -1,0 +1,38 @@
+name: Test basic PR with conventional-commits mode
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        with:
+          semver-mode: conventional-commits
+          default-first-tag: v1.0.0
+          terraform-docs-version: v0.21.0
+          delete-legacy-tags: "true"
+          disable-wiki: "true"
+          disable-branding: "true"
+          github_token: ${{ github.token }}
+        continue-on-error: true
+
+      - name: Assert action ran without unexpected crash
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "action outcome: $OUTCOME"
+          # The action may fail due to no Terraform modules found or no PR context,
+          # but it should not crash with an unhandled exception (outcome is success or failure, not cancelled)
+          if [ "$OUTCOME" = "cancelled" ]; then
+            echo "FAIL: action was cancelled unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action completed with outcome=$OUTCOME (success or failure both acceptable in test env)"

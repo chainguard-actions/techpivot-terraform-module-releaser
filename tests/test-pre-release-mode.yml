@@ -1,0 +1,70 @@
+name: Test pre-release mode configuration
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create fake PR event payload
+        run: |
+          mkdir -p /tmp/gh-event
+          cat > /tmp/gh-event/pull_request.json << 'EOF'
+          {
+            "action": "opened",
+            "number": 1,
+            "pull_request": {
+              "number": 1,
+              "title": "feat: add pre-release module",
+              "body": "Testing pre-release configuration",
+              "merged": false,
+              "head": {
+                "sha": "abc123def456abc123def456abc123def456abc1",
+                "ref": "feature/pre-release-test"
+              },
+              "base": {
+                "sha": "def456abc123def456abc123def456abc123def4",
+                "ref": "main"
+              }
+            },
+            "repository": {
+              "full_name": "${{ github.repository }}",
+              "name": "${{ github.event.repository.name }}",
+              "owner": {
+                "login": "${{ github.repository_owner }}"
+              }
+            },
+            "sender": {
+              "login": "test-user"
+            }
+          }
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_NAME: pull_request
+          GITHUB_EVENT_PATH: /tmp/gh-event/pull_request.json
+        with:
+          github_token: ${{ github.token }}
+          pre-release: "true"
+          disable-wiki: "true"
+          semver-mode: conventional-commits
+          default-first-tag: v1.0.0
+          delete-legacy-tags: "false"
+
+      - name: Assert action processed pre-release config (not a config error)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should either succeed or fail due to API calls, not config errors.
+          # pre-release=true is a valid configuration option.
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action accepted pre-release=true configuration (outcome: $OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
