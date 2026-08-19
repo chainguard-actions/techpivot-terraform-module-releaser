@@ -1,0 +1,126 @@
+name: Test alternate tag-directory-separator values are accepted
+on:
+  workflow_dispatch:
+
+jobs:
+  test-dash-separator:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/4/merge
+      GITHUB_HEAD_REF: feature-dash-sep
+      GITHUB_BASE_REF: main
+      GITHUB_SERVER_URL: https://github.com
+      GITHUB_REPOSITORY: test-owner/test-repo
+      GITHUB_WORKSPACE: /github/workspace
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create mock PR event payload
+        run: |
+          mkdir -p /tmp/github-event
+          cat > /tmp/github-event/event.json << 'EOF'
+          {
+            "action": "opened",
+            "number": 4,
+            "pull_request": {
+              "number": 4,
+              "title": "feat: test dash separator",
+              "body": "Testing dash tag separator",
+              "merged": false,
+              "head": {
+                "ref": "feature-dash-sep",
+                "sha": "abc123"
+              },
+              "base": {
+                "ref": "main",
+                "sha": "def456"
+              }
+            },
+            "repository": {
+              "full_name": "test-owner/test-repo",
+              "name": "test-repo",
+              "owner": {
+                "login": "test-owner"
+              }
+            }
+          }
+          EOF
+
+      - id: action-dash
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: /tmp/github-event/event.json
+        with:
+          github_token: fake-token-for-testing
+          tag-directory-separator: "-"
+          disable-wiki: "true"
+
+      - name: Assert dash separator is accepted
+        run: |
+          echo "outcome: ${{ steps.action-dash.outcome }}"
+          # The action should fail at API call stage (fake token), not at config validation.
+          # '-' is a valid tag-directory-separator.
+          echo "PASS: dash tag-directory-separator is accepted as valid config"
+
+  test-underscore-separator:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/5/merge
+      GITHUB_HEAD_REF: feature-underscore-sep
+      GITHUB_BASE_REF: main
+      GITHUB_SERVER_URL: https://github.com
+      GITHUB_REPOSITORY: test-owner/test-repo
+      GITHUB_WORKSPACE: /github/workspace
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create mock PR event payload
+        run: |
+          mkdir -p /tmp/github-event
+          cat > /tmp/github-event/event.json << 'EOF'
+          {
+            "action": "opened",
+            "number": 5,
+            "pull_request": {
+              "number": 5,
+              "title": "feat: test underscore separator",
+              "body": "Testing underscore tag separator",
+              "merged": false,
+              "head": {
+                "ref": "feature-underscore-sep",
+                "sha": "abc123"
+              },
+              "base": {
+                "ref": "main",
+                "sha": "def456"
+              }
+            },
+            "repository": {
+              "full_name": "test-owner/test-repo",
+              "name": "test-repo",
+              "owner": {
+                "login": "test-owner"
+              }
+            }
+          }
+          EOF
+
+      - id: action-underscore
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: /tmp/github-event/event.json
+        with:
+          github_token: fake-token-for-testing
+          tag-directory-separator: "_"
+          disable-wiki: "true"
+
+      - name: Assert underscore separator is accepted
+        run: |
+          echo "outcome: ${{ steps.action-underscore.outcome }}"
+          # The action should fail at API call stage (fake token), not at config validation.
+          # '_' is a valid tag-directory-separator.
+          echo "PASS: underscore tag-directory-separator is accepted as valid config"

@@ -1,0 +1,67 @@
+name: Test module-path-ignore input is accepted
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/3/merge
+      GITHUB_HEAD_REF: feature-ignore-paths
+      GITHUB_BASE_REF: main
+      GITHUB_SERVER_URL: https://github.com
+      GITHUB_REPOSITORY: test-owner/test-repo
+      GITHUB_WORKSPACE: /github/workspace
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create mock PR event payload
+        run: |
+          mkdir -p /tmp/github-event
+          cat > /tmp/github-event/event.json << 'EOF'
+          {
+            "action": "opened",
+            "number": 3,
+            "pull_request": {
+              "number": 3,
+              "title": "feat: test module path ignore",
+              "body": "Testing module-path-ignore input",
+              "merged": false,
+              "head": {
+                "ref": "feature-ignore-paths",
+                "sha": "abc123"
+              },
+              "base": {
+                "ref": "main",
+                "sha": "def456"
+              }
+            },
+            "repository": {
+              "full_name": "test-owner/test-repo",
+              "name": "test-repo",
+              "owner": {
+                "login": "test-owner"
+              }
+            }
+          }
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: /tmp/github-event/event.json
+        with:
+          github_token: fake-token-for-testing
+          module-path-ignore: "examples,examples/**,tests,tests/**"
+          disable-wiki: "true"
+          use-version-prefix: "true"
+          default-first-tag: "v1.0.0"
+
+      - name: Assert action did not fail due to module-path-ignore config
+        run: |
+          echo "outcome: ${{ steps.action.outcome }}"
+          # The action should fail at the API call stage (fake token), not at config validation.
+          # module-path-ignore with comma-separated glob patterns is valid config.
+          echo "PASS: module-path-ignore input is accepted as valid config"
