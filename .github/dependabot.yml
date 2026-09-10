@@ -1,0 +1,42 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      # The @types/node major is runtime-coupled: it must match action.yml `runs.using` so post-runtime APIs fail
+      # typecheck (see docs/node.md). Minors/patches within the line still flow; bump the major only with the
+      # Actions runtime bump (node-versioning skill).
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
+      # Frozen on 6.x: TypeScript 7 ships no stable programmatic API (its main entry is lib/version.cjs, exporting
+      # only {version, versionMajorMinor}; the compiler API moved behind ./unstable/*). @vercel/ncc bundles
+      # ts-loader, which calls ts.sys.fileExists, so `npm run package` dies with "Cannot read properties of
+      # undefined (reading 'fileExists')" — https://github.com/vercel/ncc/issues/1336 (open, help wanted).
+      # tsc --noEmit and Vitest typecheck use the CLI and are unaffected, so nothing but the bundle catches this.
+      # Unfreeze once that issue closes and `npm run package` succeeds against a 7.x prerelease.
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
+    groups:
+      npm-development:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+      npm-production:
+        dependency-type: production
+        update-types:
+          - patch

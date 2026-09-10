@@ -1,0 +1,80 @@
+import {
+  VALID_TAG_DIRECTORY_SEPARATORS,
+  VERSION_TAG_REGEX,
+  MODULE_TAG_REGEX,
+  BRANDING_COMMENT,
+  BRANDING_WIKI,
+  GITHUB_ACTIONS_BOT_NAME,
+  GITHUB_ACTIONS_BOT_USERNAME,
+  PROJECT_URL,
+  PR_RELEASE_COMMENT_MARKER,
+  LEGACY_PR_RELEASE_COMMENT_MARKER,
+  RELEASE_BODY_PR_MARKER_PREFIX,
+  RELEASE_BODY_PR_MARKER_SCHEMA,
+  PR_SUMMARY_MARKER,
+  WIKI_TITLE_REPLACEMENTS,
+} from '@/utils/constants';
+import { describe, expect, it } from 'vitest';
+
+describe('utils/constants', () => {
+  it('should have the correct default separators', () => {
+    expect(VALID_TAG_DIRECTORY_SEPARATORS).toStrictEqual(['-', '_', '/', '.']);
+  });
+
+  it('should have the correct version tag regex', () => {
+    expect(VERSION_TAG_REGEX).toStrictEqual(/^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
+  });
+
+  it('should have the correct module tag regex', () => {
+    expect(MODULE_TAG_REGEX).toStrictEqual(/^(.+)([-_/.])(v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*))$/);
+  });
+
+  it('should have the correct GitHub Actions bot name', () => {
+    expect(GITHUB_ACTIONS_BOT_NAME).toBe('GitHub Actions');
+  });
+
+  it('should have the correct GitHub Actions bot username', () => {
+    expect(GITHUB_ACTIONS_BOT_USERNAME).toBe('github-actions[bot]');
+  });
+
+  it('should have the correct PR summary marker', () => {
+    expect(PR_SUMMARY_MARKER).toBe('<!-- techpivot/terraform-module-releaser — pr-summary-marker -->');
+  });
+
+  it('should have the correct (current, versioned) PR release marker', () => {
+    expect(PR_RELEASE_COMMENT_MARKER).toBe('<!-- techpivot/terraform-module-releaser:release:1 -->');
+  });
+
+  it('should preserve the legacy PR release marker content for backward-compatible detection', () => {
+    expect(LEGACY_PR_RELEASE_COMMENT_MARKER).toBe('<!-- techpivot/terraform-module-releaser — release-marker -->');
+  });
+
+  it('should have the correct release-pr marker prefix and schema', () => {
+    expect(RELEASE_BODY_PR_MARKER_PREFIX).toBe('<!-- techpivot/terraform-module-releaser:release-pr:');
+    expect(RELEASE_BODY_PR_MARKER_SCHEMA).toBe(1);
+  });
+
+  it('should have the correct project URL', () => {
+    expect(PROJECT_URL).toBe('https://github.com/techpivot/terraform-module-releaser');
+  });
+
+  it('should have the correct branding comment HTML', () => {
+    const expectedBrandingComment = `<h4 align="center"><sub align="middle">Powered by:&nbsp;&nbsp;<a href="${PROJECT_URL}"><img src="https://raw.githubusercontent.com/techpivot/terraform-module-releaser/refs/heads/main/assets/octicons-mark-github.svg" height="12" width="12" align="center" /></a> <a href="${PROJECT_URL}">techpivot/terraform-module-releaser</a></sub></h4>`;
+    expect(BRANDING_COMMENT).toBe(expectedBrandingComment);
+  });
+
+  it('should have the correct branding wiki HTML', () => {
+    const expectedBrandingWiki = `<h3 align="center">Powered by:&nbsp;&nbsp;<a href="${PROJECT_URL}"><img src="https://raw.githubusercontent.com/techpivot/terraform-module-releaser/refs/heads/main/assets/octicons-mark-github.svg" height="14" width="14" align="center" /></a> <a href="${PROJECT_URL}">techpivot/terraform-module-releaser</a></h3>`;
+    expect(BRANDING_WIKI).toBe(expectedBrandingWiki);
+  });
+
+  describe('WIKI_TITLE_REPLACEMENTS', () => {
+    it('should replace forward slash with division slash', () => {
+      expect(WIKI_TITLE_REPLACEMENTS['/']).toBe('∕');
+    });
+
+    it('should replace hyphen with figure dash', () => {
+      expect(WIKI_TITLE_REPLACEMENTS['-']).toBe('‒');
+    });
+  });
+});

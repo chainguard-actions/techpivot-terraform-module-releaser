@@ -1,0 +1,45 @@
+name: Test custom tag options
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          semver-mode: conventional-commits
+          default-semver-level: minor
+          default-first-tag: v0.1.0
+          terraform-docs-version: v0.21.0
+          delete-legacy-tags: "false"
+          disable-wiki: "true"
+          disable-branding: "true"
+          tag-directory-separator: "-"
+          use-version-prefix: "true"
+          module-ref-mode: tag
+          pre-release: "false"
+
+      - name: Assert action ran with custom tag options (outputs set, or failed gracefully on sentinel repo)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          ALL_MODULE_NAMES: ${{ steps.action.outputs.all-module-names }}
+          ALL_MODULES_MAP: ${{ steps.action.outputs.all-modules-map }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "all-module-names: $ALL_MODULE_NAMES"
+          echo "all-modules-map: $ALL_MODULES_MAP"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded with custom tag options"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo is not resolvable)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

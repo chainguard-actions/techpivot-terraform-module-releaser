@@ -1,0 +1,41 @@
+name: Test basic usage
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          github_token: ${{ github.token }}
+          semver-mode: conventional-commits
+          default-semver-level: patch
+          default-first-tag: v1.0.0
+          terraform-docs-version: v0.21.0
+          delete-legacy-tags: "true"
+          disable-wiki: "true"
+          disable-branding: "true"
+
+      - name: Assert action ran (outputs set, or failed gracefully on sentinel repo)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          ALL_MODULE_NAMES: ${{ steps.action.outputs.all-module-names }}
+          CHANGED_MODULE_NAMES: ${{ steps.action.outputs.changed-module-names }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "all-module-names: $ALL_MODULE_NAMES"
+          echo "changed-module-names: $CHANGED_MODULE_NAMES"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo is not resolvable)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

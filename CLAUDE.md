@@ -1,0 +1,83 @@
+# Terraform Module Releaser
+
+GitHub Action (TypeScript, strict, ESM) that automates versioning, releases, and wiki documentation for Terraform
+modules in monorepos. Creates per-module Git tags, GitHub releases, PR comments, and wiki pages.
+
+## Commands
+
+```bash
+npm run fix             # Format + autofix code and prose — run before committing
+npm run format          # Biome format (TS/JS/JSON) + Prettier (md/yml); `format:check` to verify only
+npm run lint            # All linters: lint:code, lint:types, lint:text, lint:actions
+npm run lint:types      # tsc --noEmit
+npm run test            # Vitest + V8 coverage; integration tests need GITHUB_TOKEN and skip gracefully without it
+npm run test:watch      # Watch mode
+npm run package         # Bundle dist/ via ncc
+```
+
+Scripts follow the
+[ESLint package.json conventions](https://eslint.org/docs/latest/contribute/package-json-conventions): `lint*` analyzes,
+`format*` rewrites, `:fix` autofixes, `:check` never mutates. `lint:actions` (actionlint) needs a binary that is not on
+npm — it skips locally with an install hint and is enforced in CI. Secret scanning (gitleaks) is CI-only and is
+deliberately not part of `npm run lint`.
+
+## Stack
+
+- TypeScript strict mode, ES modules; Biome for TS/JS/JSON (not ESLint), Prettier for md/yml only
+- TypeScript is frozen on 6.x — 7.x exposes no stable programmatic API and breaks `npm run package` via ncc's
+  `ts-loader` ([vercel/ncc#1336](https://github.com/vercel/ncc/issues/1336)); `tsc`/Vitest use the CLI and miss it, so
+  run `npm run package` on any TypeScript major change (detail: `docs/development.md`)
+- Node 24 everywhere by parity policy — `.node-version`, devcontainer, CI, and the `action.yml` runtime share the major;
+  `@types/node` is pinned to it so post-runtime APIs fail typecheck (policy: `docs/node.md`)
+- `@actions/core` + `@octokit` for GitHub integration; Vitest for tests
+- Path aliases: `@/` → `src/`, `@/tests/` → `__tests__/`, `@/mocks/` → `__mocks__/`
+
+## Code quality
+
+SonarQube scans every PR (`test.yml`); write to these conventions up front rather than fixing findings after:
+
+- Regexes must be linear-time — no adjacent quantifiers that can match the same characters (see `REVERT_PATTERN` in
+  `src/commit-analyzer.ts` for the canonical fix pattern and its regression test)
+- Prefer `??` over equivalent ternaries · `replaceAll` over global-regex `replace` · `.includes(x)` over equality
+  `.some()` · one multi-argument `push()` over consecutive pushes · `node:path` joins (`win32.join` for Windows-only
+  paths) over hand-escaped separators
+- Never default a parameter to a non-empty object literal — take `options?` and spread it over inline defaults:
+  `{ per_page: 100, page: 1, ...options }`
+- Validate at the boundary: input parsing rejects bad values (e.g. non-integer number inputs) with the input name in the
+  error, instead of letting them flow into config
+
+## Architecture
+
+Runs on `pull_request` events with two flows: PR open/sync → parse modules, post release plan comment; PR merged →
+create tagged releases (idempotent, self-healing), post summary comment, clean orphaned tags, generate wiki.
+
+- `config` and `context` are Proxy-based lazy singletons — safe to import at module scope; config must initialize before
+  context (context reads `config.githubToken`); both expose `clearForTesting()`
+- `src/utils/` stays pure — no config/context imports; pass values as parameters. Service files (`wiki.ts`,
+  `releases.ts`, …) may use the singletons and pass values down
+- Types live in `src/types/*.types.ts`, re-exported via `src/types/index.ts`; constants in `src/utils/constants.ts`
+- Naming: `get*` accessors · `generate*` producers that may do I/O · `render*` template/string assembly; camelCase
+  functions/vars, PascalCase types, UPPER_SNAKE_CASE constants
+- Wiki page names replace `/` with `∕` (U+2215) and `-` with `‒` (U+2012) — GitHub Wiki breaks on the real characters
+
+Read the relevant doc before significant changes:
+
+- `docs/architecture.md` — execution flow, module relationships, design decisions
+- `docs/testing.md` — mock architecture, helpers, writing tests
+- `docs/state-management.md` — release idempotency, PR markers, provenance, freshness guard
+- `docs/tagging.md` — tag naming, normalization, orphan cleanup
+- `docs/development.md` — CI/CD pipeline, tooling, release process
+- `docs/node.md` — Node version policy: runtime parity, upgrade playbook, alignment guard
+
+## Workflow
+
+- Conventional Commits for commit messages and PR titles (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`,
+  `build:`, `ci:`)
+- Don't commit or push by default — stage changes and propose a Conventional Commit message in your response; the
+  maintainer commits (GPG signing is interactive)
+- Add or update tests with every code change
+- Changing action inputs touches several files in lockstep — use the `action-inputs` skill
+- Node version references have strict alignment rules — use the `node-versioning` skill before touching `.node-version`,
+  `engines.node`, `@types/node`, or `action.yml` `runs.using`
+- `dist/` is generated by release automation only — never edit or commit it manually
+- Ask before: adding dependencies, changing build config or tsconfig targets, modifying `.github/workflows/`
