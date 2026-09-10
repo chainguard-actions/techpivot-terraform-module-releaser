@@ -14,6 +14,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v2.0.0 | [`v2.0.0`](https://github.com/chainguard-actions/techpivot-terraform-module-releaser/tree/v2.0.0) | [`e481d6d`](https://github.com/techpivot/terraform-module-releaser/commit/e481d6ddf336ed634db9b3dff9357a8ba51d7b58) |
 | v2.1.0 | [`v2.1.0`](https://github.com/chainguard-actions/techpivot-terraform-module-releaser/tree/v2.1.0) | [`f742e14`](https://github.com/techpivot/terraform-module-releaser/commit/f742e14f90a7d35f0ab230cce7db22169151aaeb) |
 | v2.2.0 | [`v2.2.0`](https://github.com/chainguard-actions/techpivot-terraform-module-releaser/tree/v2.2.0) | [`5f3fc03`](https://github.com/techpivot/terraform-module-releaser/commit/5f3fc036202008b9a2d3ab5dbb1e4a734cd90e4d) |
+| v2.2.1 | [`v2.2.1`](https://github.com/chainguard-actions/techpivot-terraform-module-releaser/tree/v2.2.1) | [`b5df513`](https://github.com/techpivot/terraform-module-releaser/commit/b5df513373777916d19dd842bf0b2b7461e7cf8f) |
 
 ## Privacy
 
