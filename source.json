@@ -4,8 +4,13 @@
   "version": "v2.2.0",
   "commit_sha": "5f3fc036202008b9a2d3ab5dbb1e4a734cd90e4d",
   "url": "https://github.com/techpivot/terraform-module-releaser",
-  "policy_sha": "d636be7e43ef829af6e853da6b3c7566db9f72fe",
+  "policy_sha": "374911c4be584df24e6da57af2d990570ef0f859",
   "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
   "test_agent_version": "2",
-  "harden_agent_version": "2"
+  "harden_agent_version": "2",
+  "dist_artifact": {
+    "gcs_uri": "gs://patch-actions-node-artifacts/dist-artifacts/techpivot/terraform-module-releaser/v2.2.0/sha256-39d7a63f80ec405119c61b68333bbe8518d3bc1fa5a7b0118367e68af0a5eb16.tar.gz",
+    "sha256": "39d7a63f80ec405119c61b68333bbe8518d3bc1fa5a7b0118367e68af0a5eb16",
+    "size_bytes": 852802
+  }
 }
